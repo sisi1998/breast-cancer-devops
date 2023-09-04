@@ -1,1 +1,62 @@
-this is a script
+pipeline {
+    agent any
+
+    environment {
+        // Set up the virtual environment for Python
+        PYTHON_VERSION = '3.8'
+        VENV = "${WORKSPACE}/venv"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout the code from the GitHub repository
+                checkout scm
+            }
+        }
+
+        stage('Setup Virtual Environment') {
+            steps {
+                // Install virtualenv
+                sh "python${PYTHON_VERSION} -m pip install virtualenv"
+                // Create a virtual environment
+                sh "python${PYTHON_VERSION} -m virtualenv ${VENV}"
+            }
+        }
+
+        stage('Build and Test') {
+            steps {
+                // Activate the virtual environment
+                sh "source ${VENV}/bin/activate"
+                // Install project dependencies
+                sh "pip install -r requirements.txt"
+                // Run tests
+                sh "python${PYTHON_VERSION} -m pytest"
+            }
+        }
+
+        stage('Deploy') {
+            when {
+                // Define when to deploy (e.g., only on the master branch)
+                expression { currentBuild.branch == 'master' }
+            }
+            steps {
+                // Deployment steps (e.g., deploying to a web server)
+                // Replace this with your deployment script
+                sh "python${PYTHON_VERSION} deploy.py"
+            }
+        }
+    }
+
+    post {
+        success {
+            // Notify on success (e.g., Slack or email notification)
+            echo 'Pipeline succeeded. Send notifications, etc.'
+        }
+        failure {
+            // Notify on failure (e.g., Slack or email notification)
+            echo 'Pipeline failed. Send notifications, etc.'
+        }
+    }
+}
+
